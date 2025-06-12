@@ -1,0 +1,80 @@
+pipeline {
+    agent {
+        label 'cross-win64'
+    }
+
+    parameters {
+        string(
+            name: 'GIT_REF',
+            defaultValue: 'master',
+            description: 'Git branch or tag to build (e.g "master", "v0.34.1", "refs/heads/feature/foo")'
+        )
+    }
+
+    environment {
+        TARGET = 'x86_64-w64-mingw32'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    ref = params.GIT_REF.startsWith('refs/') ? params.GIT_REF :
+                        params.GIT_REF == 'master' ? 'refs/heads/master' : "refs/tags/${params.GIT_REF}"
+
+                    checkout poll: false, scm: scmGit(
+                        branches: [[name: ref]],
+                        extensions: [],
+                        userRemoteConfigs:
+                        [
+                            [url: 'https://github.com/mpv-player/mpv.git']
+                        ]
+                    )
+                }
+            }
+        }
+
+        stage('Install Meson Wraps') {
+            steps {
+                sh 'mkdir subprojects -p'
+                sh 'meson wrap install mujs'
+            }
+        }
+
+        stage('Build Libraries') {
+            steps {
+                sh './ci/build-mingw64.sh'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh './ci/build-mingw64.sh meson pack'
+            }
+        }
+
+        stage('Functional test') {
+            environment {
+                WINEDEBUG = '+loaddll'
+            }
+            steps {
+                dir('artifact') {
+                    sh 'wine ./mpv.com -v --no-config'
+                }
+            }
+        }
+
+        stage('Run meson tests') {
+            steps {
+                sh 'meson test -C mingw_build'
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                sh 'ls -lah artifact/'
+                archiveArtifacts artifacts: 'mpv*.zip', followSymlinks: false
+            }
+        }
+    }
+}
