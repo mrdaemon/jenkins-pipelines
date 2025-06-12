@@ -1,0 +1,22 @@
+pipeline {
+    agent {
+        label 'doom'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git poll: false, url: 'https://github.com/pa1nki113r/Project_Brutality.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'zip -9 -r ../pbmaster.pk3 . -x ".git/**"'
+                dir('../') {
+                    archiveArtifacts artifacts: 'pbmaster.pk3', followSymlinks: false
+                }
+            }
+        }
+    }
+}
