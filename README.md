@@ -13,4 +13,4 @@ box.
 ## License
 
 This repository is licensed under the [MIT License](LICENSE).
-No warranty, express or implied, is provided with this software or the author.
+No warranty, express or implied, is provided by use of this software or by the author.
