@@ -38,6 +38,7 @@ pipeline {
             steps {
                 sh 'mkdir subprojects -p'
                 sh 'meson wrap install mujs'
+                sh 'meson subprojects download'
             }
         }
 
